@@ -11,23 +11,26 @@ class Scraper:
 
     def __init__(self):
         self.base_url = 'https://www.sports-reference.com/olympics/'
-        self.athlete_links = []
+        self.athlete_links = []  # a list of athlete links
+        self.failed_links = []  # pages that fail get saved here
+        self.results = []  # pre-processed results tables get stored here
 
     def get_athlete_results(self):
         """
         Fetch and parse Results table from each athlete page.
-        The Results table is stored as a list of rows, with the first row being the table header.
+        The Results tables are stored in self.results
 
         Two issues will have to solved to combine results across many athletes:
 
         1. The length of the header may differ from the length of the rows containing data.
         2. The lengths of tables may vary across athletes depending on data availability.
 
-
-
-        :return: List of lists, where each sublist is a Results table formatted as a list of rows.
+        :return: List of lists, where each list is the Results table for an athlete, and
+        the first element of each list is the header row and all remaining rows are data.
+        Rows have already been trimmed to have the same length and only columns with content.
         """
 
+        # Look over each page in athlete_links
         for page in self.athlete_links:
 
             # Get and parse html text using Python's built-in HTML parser
@@ -42,32 +45,33 @@ class Scraper:
                 try:
                     text = get(page).text
                 except Exception as e:
+                    self.failed_links.append(page)
                     print(e)
-                    print('Failed to get results for ' + page)
+                    print('Failed to get results for page:' + page)
 
             # Parse HTML and extract results table
-
-            # TODO: EXTRACT div WHERE id="div_results"
-
             html_soup = BeautifulSoup(text, 'html.parser')
-            table = html_soup.find('table')
+            table = html_soup.find("div", {"id": "div_results"})
 
-            # Parse the results table
+            # Parse table header
             try:
                 table_headers = [th.text for th in table.thead.find_all('th')]
             except Exception as e:
                 print(e)
-                print('Failed on: ' + page)
+                print('Failed to parse page: ' + page)
+            table_headers = table_headers[:-1]
 
-            table_body = [tr.text for tr in table.find('tbody').find_all('tr')][0].split('\n')
+            # Parse table body
+            table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
+            table_body = [row.split('\n')[1:(1 + len(table_headers))] for row in table_body]
 
-            print(table_headers)
-            print(table_body)
-
+            # Save Results
+            self.results = [table_headers] + table_body
 
 class NocScraper(Scraper):
     """
     Scrape athlete data for a given NOC.
+
     :param geo: 3 letter NOC
     """
 
@@ -186,8 +190,6 @@ class NocScraper(Scraper):
                ' athletes for NOC = ' + \
                self.noc
         print(text)
-
-# Loop through athletes_pages and extract results data
 
 # class AthleteResultsParser:
 
