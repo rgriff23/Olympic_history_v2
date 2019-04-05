@@ -1,7 +1,8 @@
-import geotext as geo
+# import geotext as geo
 from requests import get
 from bs4 import BeautifulSoup
 from time import sleep
+import warnings
 
 
 class Scraper:
@@ -14,8 +15,100 @@ class Scraper:
         self.athlete_links = []  # a list of athlete links
         self.failed_links = []  # pages that fail get saved here
         self.results = []  # pre-processed results tables get stored here
+        self.info = []
 
-    def get_athlete_results(self):
+    def parse_infobox(self, html_soup):
+        """
+        Used internally by self.get_athlete_data
+
+        :param html_soup:
+        :return: Results are not returned, they are stored as a list of dictionaries in self.info
+        """
+
+        # Get the infobox
+        ptext = html_soup.find("div", {"id": "info_box"}).find('p').getText().split('\n')
+
+        # Parse name
+        name = html_soup.find('h1')
+        if name:
+            name = name.text
+        else:
+            name = None
+
+        # Parse gender
+        gender = list(filter(lambda x: 'Gender: ' in x, ptext))
+        if gender:
+            gender = gender[0][8:]
+        else:
+            gender = None
+
+        # Parse height
+        height = list(filter(lambda x: 'Height: ' in x, ptext))
+        if height:
+            height = height[0]
+            height = int(height[height.find('(') + 1:height.find(' cm)')])
+        else:
+            height = None
+
+        # Parse weight
+        # TODO: add code to clean the variable
+        weight = list(filter(lambda x: 'Weight: ' in x, ptext))
+        if weight:
+            weight = weight[0]
+            weight = weight[8:]
+        else:
+            weight = None
+
+        # Parse date and place of birth
+        birth = list(filter(lambda x: 'Born: ' in x, ptext))
+        if birth:
+            mob = birth[0].split(' ')[1]
+            yob = birth[0].split(' ')[3]
+            if mob not in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                           'October', 'November', 'December']:
+                mob = None
+            if len(yob) == 4 and yob.isdigit():
+                yob = int(yob)
+            else:
+                yob = None
+            birthplace = birth[0].split(' in ')
+            if len(birthplace) == 2:
+                birthplace = birthplace[1]
+            else:
+                birthplace = None
+        else:
+            mob = None
+            yob = None
+            birthplace = None
+
+        # Parse date of death
+        death = list(filter(lambda x: 'Died: ' in x, ptext))
+        if death:
+            mod = death[0].split(' ')[1]
+            yod = death[0].split(' ')[3]
+            if mod not in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                           'October', 'November', 'December']:
+                mod = None
+            if len(yod) == 4 and yod.isdigit():
+                yod = int(yod)
+            else:
+                yod = None
+        else:
+            mod = None
+            yod = None
+
+        # Append infobox as dictionary to self.info
+        self.info.append({'name': name,
+                          'gender': gender,
+                          'height': height,
+                          'weight': weight,
+                          'mob': mob,
+                          'yob': yob,
+                          'birthplace': birthplace,
+                          'mod': mod,
+                          'yod': yod})
+
+    def get_athlete_data(self):
         """
         Fetch and parse Results table from each athlete page.
         The Results tables are stored in self.results
@@ -25,9 +118,7 @@ class Scraper:
         1. The length of the header may differ from the length of the rows containing data.
         2. The lengths of tables may vary across athletes depending on data availability.
 
-        :return: List of lists, where each list is the Results table for an athlete, and
-        the first element of each list is the header row and all remaining rows are data.
-        Rows have already been trimmed to have the same length and only columns with content.
+        :return: List of lists, where each list is the Results table for an athlete.
         """
 
         # Look over each page in athlete_links
@@ -48,30 +139,43 @@ class Scraper:
                     self.failed_links.append(page)
                     self.results.append(None)
                     print(e)
-                    print('Failed to get results for page:' + page)
+                    print('Failed to get page: ' + page)
+                    continue
 
-            # Parse HTML and extract results table
+            # Parse HTML
             html_soup = BeautifulSoup(text, 'html.parser')
-            table = html_soup.find("div", {"id": "div_results"})
 
-            # Parse table header
+            # Parse info box and store in self.info
             try:
-                table_headers = [th.text for th in table.thead.find_all('th')]
+                self.parse_infobox(html_soup)
+            except Exception as e:
+                self.failed_links.append(page)
+                self.info.append(None)
+                print(e)
+                print('Failed to parse infobox: ' + page)
+                continue
+
+            # Parse table body and store in self.results
+            table = html_soup.find("div", {"id": "div_results"})
+            try:
+                table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
+                table_body = [row.split('\n')[1:10] for row in table_body]
+                self.results.append(table_body)
             except Exception as e:
                 print(e)
-                print('Failed to parse page: ' + page)
-            table_headers = table_headers[:-1]
+                print('Failed to parse results table: ' + page)
+                self.results.append(None)
+                continue
 
-            # Parse table body
-            table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
-            table_body = [row.split('\n')[1:(1 + len(table_headers))] for row in table_body]
+        # Check for problems
+        if len(self.athlete_links) != len(self.results):
+            warnings.warn('Number of athlete links and number of results tables differ.')
+        if len(self.athlete_links) != len(self.info):
+            warnings.warn('Number of athlete links and number of info boxes differ.')
 
-            # Save Results
-            self.results = [table_headers] + table_body
-
-    # TODO: Function to get athlete info box
-    # TODO: Function to parse results and info box into final data
+    # TODO: Function to combine results and info box into final data
     # TODO: Function to write final data
+
 
 class NocScraper(Scraper):
     """
@@ -195,7 +299,3 @@ class NocScraper(Scraper):
                ' athletes for NOC = ' + \
                self.noc
         print(text)
-
-# class AthleteResultsParser:
-
-#    pass
