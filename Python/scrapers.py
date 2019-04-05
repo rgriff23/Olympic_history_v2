@@ -46,6 +46,7 @@ class Scraper:
                     text = get(page).text
                 except Exception as e:
                     self.failed_links.append(page)
+                    self.results.append(None)
                     print(e)
                     print('Failed to get results for page:' + page)
 
@@ -67,6 +68,10 @@ class Scraper:
 
             # Save Results
             self.results = [table_headers] + table_body
+
+    # TODO: Function to get athlete info box
+    # TODO: Function to parse results and info box into final data
+    # TODO: Function to write final data
 
 class NocScraper(Scraper):
     """
