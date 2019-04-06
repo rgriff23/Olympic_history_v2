@@ -1,21 +1,28 @@
-# import geotext as geo
 from requests import get
 from bs4 import BeautifulSoup
 from time import sleep
 import warnings
+import pandas as pd
 
 
 class Scraper:
     """
     Parent class for scrapers.
+
+    Gets data from an athlete page. Subclasses add functions for
+    identifying which pages to visit. For example, NocScraper is
+    a subclass of Scraper that adds functions for finding all
+    athletes for a given NOC, subject to optional constraints such
+    as gender, sport, or year of the Olympics.
     """
 
     def __init__(self):
         self.base_url = 'https://www.sports-reference.com/olympics/'
         self.athlete_links = []  # a list of athlete links
         self.failed_links = []  # pages that fail get saved here
-        self.results = []  # pre-processed results tables get stored here
-        self.info = []
+        self.results = []  # results lists-of-lists get stored here
+        self.info = [] # info box dictionaries get stored here
+        self.dataframe = [] # final processed data
 
     def parse_infobox(self, html_soup):
         """
@@ -108,6 +115,62 @@ class Scraper:
                           'mod': mod,
                           'yod': yod})
 
+    def join_data(self):
+        """
+        Merge results tables and infoboxes for each athlete. Run get_athlete_data first.
+
+        :return: List of dataframes (one per athlete) with results and infobox data combined.
+        """
+
+        # Check that there are info and results to unpack
+        if len(self.results) == 0 or len(self.info) == 0:
+            warnings.warn('Info and/or results are missing! Run get_athlete_data.')
+            return
+
+        # Check that info and results are the same length
+        if len(self.results) != len(self.info):
+            warnings.warn('Oops... info and results are not the same length!')
+            return
+
+        # Reset dataframe if it is not empty
+        if len(self.dataframe) != 0:
+            warnings.warn('combined_data was not empty... resetting.')
+            self.dataframe = []
+
+        # Unpack individual results sets into dataframes (one per athlete)
+        results_dfs = [pd.DataFrame.from_records(table) for table in self.results]
+
+        # Unpack individual info boxes into a dataframe (one row per athlete)
+        info_df = pd.DataFrame.from_records(self.info)
+
+        # Check
+        if info_df.shape[0] != len(results_dfs):
+            warnings.warn('Join failed: number of info_df rows differs from length of results_dfs.')
+            return
+
+        print('Joining data from results tables and infoboxes...')
+
+        # Merge results and infoboxes
+        final_dfs = []
+        for i in range(len(results_dfs)):
+
+            # Rename results columns
+            results_names = ['Games', 'Age', 'City', 'Sport', 'Event', 'Team', 'NOC', 'Rank', 'Medal']
+            results_df = results_dfs[i]
+            results_df.columns = results_names
+
+            # Set primary keys
+            results_df['primary_key'] = 1
+            info_df['primary_key'] = pd.Series([1 if j == i else 0 for j in range(info_df.shape[0])])
+
+            # Join results/info and add to final_dfs list
+            joined = results_df.join(info_df.set_index('primary_key'), on='primary_key').drop('primary_key', axis=1)
+            final_dfs.append(joined)
+
+        self.dataframe = pd.concat(final_dfs)
+        if not self.dataframe.empty:
+            print('Join successful!')
+
     def get_athlete_data(self):
         """
         Fetch and parse Results table from each athlete page.
@@ -120,6 +183,12 @@ class Scraper:
 
         :return: List of lists, where each list is the Results table for an athlete.
         """
+
+        # Checks
+        if len(self.athlete_links) == 0:
+            warnings.warn('Athlete links are missing! Run get_athlete_links.')
+
+        print('Getting data from results tables and info boxes for each athlete...')
 
         # Look over each page in athlete_links
         for page in self.athlete_links:
@@ -173,6 +242,8 @@ class Scraper:
         if len(self.athlete_links) != len(self.info):
             warnings.warn('Number of athlete links and number of info boxes differ.')
 
+        print(f'Collected data for {len(self.athlete_links)} athletes.')
+
     # TODO: Function to combine results and info box into final data
     # TODO: Function to write final data
 
@@ -208,10 +279,6 @@ class NocScraper(Scraper):
         """
 
         print('Getting Olympic Games urls for the NOC...')
-
-        # Reset games_links if it is not empty
-        if len(self.games_links) == 0:
-            self.games_links = []
 
         # Get and parse html text using Python's built-in HTML parser
         text = get(self.entry_url).text
@@ -259,6 +326,7 @@ class NocScraper(Scraper):
 
         # Reset athlete_links if it is not empty
         if len(self.athlete_links) == 0:
+            print('athlete_links was not empty... resetting.')
             self.athlete_links = []
 
         # Loop through games_pages and extract athlete_links
