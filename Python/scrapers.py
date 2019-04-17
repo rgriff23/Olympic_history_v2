@@ -13,23 +13,22 @@ class Scraper:
     identifying which pages to visit. For example, NocScraper is
     a subclass of Scraper that adds functions for finding all
     athletes for a given NOC, subject to optional constraints such
-    as gender, sport, or year of the Olympics.
+    as gender, sport, or Olympic year.
     """
 
     def __init__(self):
         self.base_url = 'https://www.sports-reference.com/olympics/'
         self.athlete_links = []  # a list of athlete links
-        self.failed_links = []  # pages that fail get saved here
         self.results = []  # results lists-of-lists get stored here
         self.info = [] # info box dictionaries get stored here
         self.dataframe = [] # final processed data
 
-    def parse_infobox(self, html_soup):
+    def parse_infobox(self, html_soup, p):
         """
         Used internally by self.get_athlete_data
 
         :param html_soup:
-        :return: Results are not returned, they are stored as a list of dictionaries in self.info
+        :return: Results are stored as a list of dictionaries in self.info
         """
 
         # Get the infobox
@@ -58,7 +57,6 @@ class Scraper:
             height = None
 
         # Parse weight
-        # TODO: add code to clean the variable
         weight = list(filter(lambda x: 'Weight: ' in x, ptext))
         if weight:
             weight = weight[0]
@@ -69,72 +67,120 @@ class Scraper:
         # Parse date and place of birth
         birth = list(filter(lambda x: 'Born: ' in x, ptext))
         if birth:
-            mob = birth[0].split(' ')[1]
-            yob = birth[0].split(' ')[3]
-            if mob not in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
-                           'October', 'November', 'December']:
-                mob = None
-            if len(yob) == 4 and yob.isdigit():
-                yob = int(yob)
-            else:
-                yob = None
-            birthplace = birth[0].split(' in ')
-            if len(birthplace) == 2:
-                birthplace = birthplace[1]
-            else:
-                birthplace = None
+            birth = birth[0].split('Born: ')[1]
         else:
-            mob = None
-            yob = None
-            birthplace = None
+            birth = None
 
-        # Parse date of death
+        # Parse date and place of death
         death = list(filter(lambda x: 'Died: ' in x, ptext))
         if death:
-            mod = death[0].split(' ')[1]
-            yod = death[0].split(' ')[3]
-            if mod not in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
-                           'October', 'November', 'December']:
-                mod = None
-            if len(yod) == 4 and yod.isdigit():
-                yod = int(yod)
-            else:
-                yod = None
+            death = death[0].split('Died: ')[1]
         else:
-            mod = None
-            yod = None
+            death = None
+
+        # Parse affiliations
+        affiliations = list(filter(lambda x: 'Affiliations: ' in x, ptext))
+        if affiliations:
+            affiliations = affiliations[0].split('Affiliations: ')[1]
+        else:
+            affiliations = None
+
+        # Parse related Olympians
+        relatives = list(filter(lambda x: 'Related Olympians: ' in x, ptext))
+        if relatives:
+            relatives = relatives[0].split('Related Olympians: ')[1]
+        else:
+            relatives = None
 
         # Append infobox as dictionary to self.info
         self.info.append({'name': name,
                           'gender': gender,
                           'height': height,
                           'weight': weight,
-                          'mob': mob,
-                          'yob': yob,
-                          'birthplace': birthplace,
-                          'mod': mod,
-                          'yod': yod})
+                          'birth': birth,
+                          'death': death,
+                          'affiliations': affiliations,
+                          'relatives': relatives,
+                          'link': self.athlete_links[p]})
+
+    def get_athlete_data(self):
+        """
+        Fetch and parse Results table and Infobox from each athlete page.
+
+        :return: Results tables are stored in self.results and Infoboxes in self.info
+        """
+
+        # Checks
+        if len(self.athlete_links) == 0:
+            warnings.warn('Athlete links are missing! Run get_athlete_links.')
+
+        print('Getting data from results tables and info boxes for each athlete...')
+
+        # Loop over each page in athlete_links
+        for p, page in enumerate(self.athlete_links):
+
+            # Get and parse html text using Python's built-in HTML parser
+            try:
+                text = get(page).text
+            # Pause for a minute if there was a problem and try again
+            except Exception as e:
+                print(e)
+                print('Sleeping for 60 seconds before trying again.')
+                sleep(60)
+                print('Trying again...')
+                try:
+                    text = get(page).text
+                except Exception as e:
+                    self.results.append(None)
+                    self.info.append(None)
+                    print('Failed to get page: ' + page)
+                    print(e)
+                    continue
+
+            # Parse HTML
+            html_soup = BeautifulSoup(text, 'html.parser')
+
+            # Parse info box and store in self.info
+            try:
+                self.parse_infobox(html_soup, p)
+            except Exception as e:
+                print('Exception parsing infobox: ' + page)
+                print(e)
+                continue
+
+            # Parse table body and store in self.results
+            table = html_soup.find("div", {"id": "div_results"})
+            try:
+                table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
+                table_body = [row.split('\n')[1:10] for row in table_body]
+                self.results.append(table_body)
+            except Exception as e:
+                print('Exception parsing results table: ' + page)
+                print(e)
+                continue
+
+        # Checks
+        assert len(self.athlete_links) == len(self.results)
+        assert len(self.athlete_links) == len(self.info)
+
+        print(f'Collected data for {len(self.athlete_links)} athletes.')
 
     def join_data(self):
         """
         Merge results tables and infoboxes for each athlete. Run get_athlete_data first.
 
-        :return: List of dataframes (one per athlete) with results and infobox data combined.
+        :return: Dataframe with results and infobox data combined. Each row is an athlete-result.
         """
 
-        # Check that there are info and results to unpack
+        # Checks
+        assert (len(self.athlete_links) == len(self.results)) & (len(self.athlete_links) == len(self.info))
         if len(self.results) == 0 or len(self.info) == 0:
             warnings.warn('Info and/or results are missing! Run get_athlete_data.')
             return
 
-        # Check that info and results are the same length
-        if len(self.results) != len(self.info):
-            warnings.warn('Oops... info and results are not the same length!')
-            return
-
         # Reset dataframe if it is not empty
         if len(self.dataframe) != 0:
-            warnings.warn('combined_data was not empty... resetting.')
+            warnings.warn('final dataframe was not empty... resetting.')
             self.dataframe = []
 
         # Unpack individual results sets into dataframes (one per athlete)
@@ -152,11 +198,10 @@ class Scraper:
 
         # Merge results and infoboxes
         final_dfs = []
-        for i in range(len(results_dfs)):
+        for i, results_df in enumerate(results_dfs):
 
             # Rename results columns
             results_names = ['Games', 'Age', 'City', 'Sport', 'Event', 'Team', 'NOC', 'Rank', 'Medal']
-            results_df = results_dfs[i]
             results_df.columns = results_names
 
             # Set primary keys
@@ -170,83 +215,6 @@ class Scraper:
         self.dataframe = pd.concat(final_dfs)
         if not self.dataframe.empty:
             print('Join successful!')
-
-    def get_athlete_data(self):
-        """
-        Fetch and parse Results table from each athlete page.
-        The Results tables are stored in self.results
-
-        Two issues will have to solved to combine results across many athletes:
-
-        1. The length of the header may differ from the length of the rows containing data.
-        2. The lengths of tables may vary across athletes depending on data availability.
-
-        :return: List of lists, where each list is the Results table for an athlete.
-        """
-
-        # Checks
-        if len(self.athlete_links) == 0:
-            warnings.warn('Athlete links are missing! Run get_athlete_links.')
-
-        print('Getting data from results tables and info boxes for each athlete...')
-
-        # Look over each page in athlete_links
-        for page in self.athlete_links:
-
-            # Get and parse html text using Python's built-in HTML parser
-            try:
-                text = get(page).text
-            # Pause for a minute if there was a problem and try again
-            except Exception as e:
-                print(e)
-                print('Sleeping for 60 seconds before trying again.')
-                sleep(60)
-                print('Trying again...')
-                try:
-                    text = get(page).text
-                except Exception as e:
-                    self.failed_links.append(page)
-                    self.results.append(None)
-                    print(e)
-                    print('Failed to get page: ' + page)
-                    continue
-
-            # Parse HTML
-            html_soup = BeautifulSoup(text, 'html.parser')
-
-            # Parse info box and store in self.info
-            try:
-                self.parse_infobox(html_soup)
-            except Exception as e:
-                self.failed_links.append(page)
-                self.info.append(None)
-                print(e)
-                print('Failed to parse infobox: ' + page)
-                continue
-
-            # Parse table body and store in self.results
-            table = html_soup.find("div", {"id": "div_results"})
-            try:
-                table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
-                table_body = [row.split('\n')[1:10] for row in table_body]
-                self.results.append(table_body)
-            except Exception as e:
-                print(e)
-                print('Failed to parse results table: ' + page)
-                self.results.append(None)
-                continue
-
-        # Check for problems
-        if len(self.athlete_links) != len(self.results):
-            warnings.warn('Number of athlete links and number of results tables differ.')
-        if len(self.athlete_links) != len(self.info):
-            warnings.warn('Number of athlete links and number of info boxes differ.')
-
-        print(f'Collected data for {len(self.athlete_links)} athletes.')
-
-    # TODO: Function to combine results and info box into final data
-    # TODO: Function to write final data
-
 
 class NocScraper(Scraper):
     """
@@ -279,6 +247,11 @@ class NocScraper(Scraper):
         """
 
         print('Getting Olympic Games urls for the NOC...')
+
+        # Reset athlete_links if it is not empty
+        if len(self.games_links) != 0:
+            print('games_links was not empty... resetting.')
+            self.games_links = []
 
         # Get and parse html text using Python's built-in HTML parser
         text = get(self.entry_url).text
@@ -319,13 +292,14 @@ class NocScraper(Scraper):
 
         :param male: Whether to include males (defaults to True)
         :param female: Whether to include females (defaults to True)
+        :param one_sport: include athletes from the specified sport only (defaults to None)
         :return: List of links to athletes in the NOC/Games
         """
 
         print('Getting individual athlete urls...')
 
         # Reset athlete_links if it is not empty
-        if len(self.athlete_links) == 0:
+        if len(self.athlete_links) != 0:
             print('athlete_links was not empty... resetting.')
             self.athlete_links = []
 
