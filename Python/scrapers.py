@@ -17,12 +17,14 @@ class Scraper:
     """
 
     def __init__(self):
-        self.base_url = 'https://www.sports-reference.com/olympics/'
+        self.base_url = 'https://www.sports-reference.com/oFlympics/'
         self.athlete_links = []  # a list of athlete links
         self.results = []  # results lists-of-lists get stored here
         self.info = [] # info box dictionaries get stored here
-        self.dataframe = [] # final processed data
-
+        self.events = [] # events history dicts of lists
+        self.results_df = [] # infobox + results dataframe
+        self.events_dfs = [] # events history dict of dataframes
+ 
     def parse_infobox(self, html_soup, p):
         """
         Used internally by self.get_athlete_data
@@ -148,7 +150,7 @@ class Scraper:
                 print(e)
                 continue
 
-            # Parse table body and store in self.results
+            # Parse results table and store in self.results
             table = html_soup.find("div", {"id": "div_results"})
             try:
                 table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
@@ -178,10 +180,10 @@ class Scraper:
             warnings.warn('Info and/or results are missing! Run get_athlete_data.')
             return
 
-        # Reset dataframe if it is not empty
-        if len(self.dataframe) != 0:
-            warnings.warn('final dataframe was not empty... resetting.')
-            self.dataframe = []
+        # Reset results_df if it is not empty
+        if len(self.results_df) != 0:
+            warnings.warn('results_df was not empty... resetting.')
+            self.results_df = []
 
         # Unpack individual results sets into dataframes (one per athlete)
         results_dfs = [pd.DataFrame.from_records(table) for table in self.results]
@@ -212,15 +214,16 @@ class Scraper:
             joined = results_df.join(info_df.set_index('primary_key'), on='primary_key').drop('primary_key', axis=1)
             final_dfs.append(joined)
 
-        self.dataframe = pd.concat(final_dfs)
-        if not self.dataframe.empty:
+        self.results_df = pd.concat(final_dfs)
+        if not self.results_df.empty:
             print('Join successful!')
+
 
 class NocScraper(Scraper):
     """
     Scrape athlete data for a given NOC.
 
-    :param geo: 3 letter NOC
+    :param noc: 3 letter NOC
     """
 
     def __init__(self, noc):
@@ -292,7 +295,7 @@ class NocScraper(Scraper):
 
         :param male: Whether to include males (defaults to True)
         :param female: Whether to include females (defaults to True)
-        :param one_sport: include athletes from the specified sport only (defaults to None)
+        :param one_sport: Include athletes from the specified sport only (defaults to None)
         :return: List of links to athletes in the NOC/Games
         """
 
@@ -341,3 +344,4 @@ class NocScraper(Scraper):
                ' athletes for NOC = ' + \
                self.noc
         print(text)
+
