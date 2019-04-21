@@ -17,6 +17,9 @@ def parse_age(df):
     return df
 
 def parse_city(df):
+    df.City.replace('MÃ¼nchen', 'Munich', inplace=True)
+    df.City.replace('MontrÃ©al', 'Montreal', inplace=True)
+    df.City.replace('Ciudad de MÃ©xico', 'Mexico City', inplace=True)
     return df
 
 def parse_sport(df):

@@ -1,0 +1,52 @@
+Year,Season,City,Country,Countries,Participants,Men,Women,Sports,Events
+2014,Winter,Sochi,Russia,89,"2,749","1,643","1,103",15,98
+2010,Winter,Vancouver,Canada,82,"2,536","1,503","1,033",15,86
+2006,Winter,Torino,Italy,79,"2,494","1,539",955,15,84
+2002,Winter,Salt Lake City,United States,77,"2,399","1,513",886,15,78
+1998,Winter,Nagano,Japan,72,"2,180","1,390",789,14,68
+1994,Winter,Lillehammer,Norway,67,"1,738","1,215",522,12,61
+1992,Winter,Albertville,France,64,"1,801","1,312",488,12,57
+1988,Winter,Calgary,Canada,57,"1,427","1,109",315,11,46
+1984,Winter,Sarajevo,Yugoslavia,49,"1,273",996,277,10,39
+1980,Winter,Lake Placid,United States,37,"1,072",837,235,10,38
+1976,Winter,Innsbruck,Austria,37,"1,129",897,231,10,37
+1972,Winter,Sapporo,Japan,35,"1,008",802,206,10,35
+1968,Winter,Grenoble,France,37,"1,160",949,211,10,35
+1964,Winter,Innsbruck,Austria,36,"1,094",894,200,10,34
+1960,Winter,Squaw Valley,United States,30,665,521,144,8,27
+1956,Winter,Cortina d'Ampezzo,Italy,32,821,689,132,8,24
+1952,Winter,Oslo,Norway,30,694,585,109,8,22
+1948,Winter,Sankt Moritz,Switzerland,28,668,591,77,9,22
+1936,Winter,Garmisch-Partenkirchen,Germany,28,668,588,80,8,17
+1932,Winter,Lake Placid,United States,17,253,231,21,8,14
+1928,Winter,Sankt Moritz,Switzerland,25,461,433,28,8,13
+1924,Winter,Chamonix,France,19,313,300,13,10,17
+2016,Summer,Rio de Janeiro,Brazil,207,"11,191","6,147","5,037",34,306
+2012,Summer,London,Great Britain,205,"10,517","5,864","4,653",32,302
+2008,Summer,Beijing,China,204,"10,902","6,290","4,610",34,303
+2004,Summer,Athina,Greece,201,"10,560","6,257","4,303",34,301
+2000,Summer,Sydney,Australia,200,"10,648","6,579","4,068",34,300
+1996,Summer,Atlanta,United States,197,"10,344","6,820","3,521",31,271
+1992,Summer,Barcelona,Spain,169,"9,386","6,659","2,721",29,257
+1988,Summer,Seoul,South Korea,159,"8,454","6,249","2,203",27,237
+1984,Summer,Los Angeles,United States,140,"6,799","5,224","1,567",26,221
+1980,Summer,Moskva,Soviet Union,80,"5,259","4,135","1,123",23,203
+1976,Summer,Montréal,Canada,92,"6,073","4,812","1,260",23,198
+1972,Summer,München,West Germany,121,"7,114","6,053","1,060",23,195
+1968,Summer,Ciudad de México,Mexico,112,"5,558","4,775",783,20,172
+1964,Summer,Tokyo,Japan,93,"5,137","4,457",680,21,163
+1960,Summer,Roma,Italy,83,"5,352","4,738",613,19,150
+1956,Summer,Melbourne,Australia,67,"3,189","2,818",371,18,145
+1952,Summer,Helsinki,Finland,69,"4,932","4,411",521,19,149
+1948,Summer,London,Great Britain,59,"4,397","3,950",446,21,149
+1936,Summer,Berlin,Germany,49,"4,484","4,123",361,24,143
+1932,Summer,Los Angeles,United States,47,"1,922","1,721",201,18,126
+1928,Summer,Amsterdam,Netherlands,46,"3,250","2,937",312,17,120
+1924,Summer,Paris,France,45,"3,256","3,100",156,20,130
+1920,Summer,Antwerpen,Belgium,29,"2,677","2,599",78,25,160
+1912,Summer,Stockholm,Sweden,29,"2,424","2,356",53,17,107
+1908,Summer,London,Great Britain,22,"2,024","1,980",44,24,109
+1906,Summer,Athina,Greece,21,841,835,6,13,74
+1904,Summer,St. Louis,United States,15,650,644,6,18,95
+1900,Summer,Paris,France,31,"1,224","1,201",23,20,95
+1896,Summer,Athina,Greece,12,176,176,0,9,43
