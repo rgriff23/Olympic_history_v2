@@ -21,10 +21,10 @@ scraper.get_games_links(min_year=1970, max_year=1972)
 # A valid list of sports can be found at Data/d_sport
 scraper.get_athlete_links(male=False)
 
-# Get data from results and infoboxes
+# Get data
 scraper.get_athlete_data()
 
-# Combine data from results and infoboxes into dataframe
+# Combine data
 scraper.join_data()
 
 #########
