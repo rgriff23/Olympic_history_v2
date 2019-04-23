@@ -13,7 +13,7 @@ def parse_games(df):
     return df
 
 def parse_age(df):
-    df['Age'] = df.Age.astype(int)
+    df['Age'] = [None if i == '' else int(i) for i in df['Age']]
     return df
 
 def parse_city(df):
@@ -60,10 +60,12 @@ def parse_gender(df):
     return df
 
 def parse_birth(df):
+    
     split = [s.split(' in ') if s else None for s in df.birth]
     # If no month / day is given, then April 21
-    df['BirthDate'] = [dp.parse(s[0]).date() if s else None for s in split]
-    df['BirthCity'] = [None if s else gp(s[1]).cities if len(s) == 2 else None for s in split]
+    df['BirthDate'] = [dp.parse(s[0]) if s else None for s in split]
+    df['BirthDate'] = [s.date() if s else None for s in df['BirthDate']]
+    df['BirthCity'] = [None if s is None else gp(s[1]).cities if len(s) == 2 else None for s in split]
     df['BirthCity'] = [c[0] if c else None for c in df.BirthCity]
     df['BirthCountry'] = [None if s is None else gp(s[1]).countries if len(s) == 2 else None for s in split]
     df['BirthCountry'] = [c[0] if c else None for c in df.BirthCountry]
@@ -71,9 +73,10 @@ def parse_birth(df):
     return df
 
 def parse_death(df):
-    split = pd.Series([s.split(' in ') if s else None for s in df.death])
+    split = [s.split(' in ') if s else None for s in df.death]
     # If no month / day is given, then April 21
-    df['DeathDate'] = [dp.parse(s[0]).date() if s else None for s in split]
+    df['DeathDate'] = [dp.parse(s[0]) if s else None for s in split]
+    df['DeathDate'] = [s.date() if s else None for s in df['DeathDate']]
     df['DeathCity'] = [None if s is None else gp(s[1]).cities if len(s) == 2 else None for s in split]
     df['DeathCity'] = [c[0] if c else None for c in df.DeathCity]
     df['DeathCountry'] = [None if s is None else gp(s[1]).countries if len(s) == 2 else None for s in split]
@@ -136,7 +139,6 @@ class Parser:
         self.results_df = scraper.results_df
         assert (len(self.scraper.results_df) + len(self.scraper.events_dfs)) > 0
         self.parsed_results = []
-        self.parsed_events = []
         self.parse_results_dict = parse_results_dict
     
     def parse_results_df(self):
@@ -158,17 +160,14 @@ class Parser:
             print(' - ', i)
         
         # Subset of fields with valid functions
-        print('The following parsers will be used: ')
         valid_fields = [i for (i, v) in zip(valid_fields, [f in df.columns.values for f in valid_fields]) if v]
-        for i in valid_fields:
-           print(' - ', i)
     
-        print('Parsing...')
-        
         # Run fields through the parsing functions
+        print(f'Parsing {len(valid_fields)} fields...')
         for field in valid_fields:
             try:
                 df = parse_dict[field](df)
+                print(' - Parsed field:', field)
             except Exception as e:
                 print('Parsing failed for field:', field)
                 print(e)
@@ -177,10 +176,5 @@ class Parser:
         self.parsed_results = df
         
         print('Parsed', self.results_df.shape[1], 'fields.')
-    
-    def parse_events_dfs(self):
-        df = self.events_dfs
-        self.parsed_events = df
 
-        
     

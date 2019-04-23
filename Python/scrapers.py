@@ -1,6 +1,7 @@
 from requests import get
 from bs4 import BeautifulSoup
-from time import sleep
+from time import (sleep, time)
+from tqdm import tqdm
 import warnings
 import pandas as pd
 
@@ -116,10 +117,11 @@ class Scraper:
         if len(self.athlete_links) == 0:
             warnings.warn('Athlete links are missing! Run get_athlete_links.')
 
-        print('Getting data from results tables and info boxes for each athlete...')
+        print('Getting data for each athlete...')
+        start = time()
 
         # Loop over each page in athlete_links
-        for p, page in enumerate(self.athlete_links):
+        for p, page in enumerate(tqdm(self.athlete_links)):
 
             # Get and parse html text using Python's built-in HTML parser
             try:
@@ -166,6 +168,7 @@ class Scraper:
         assert len(self.athlete_links) == len(self.info)
 
         print(f'Collected data for {len(self.athlete_links)} athletes.')
+        print('Time elapsed:', round((time() - start)/60, 2), 'minutes.')
 
     def join_data(self):
         """
@@ -197,6 +200,7 @@ class Scraper:
             return
 
         print('Joining data from results tables and infoboxes...')
+        start = time()
 
         # Merge results and infoboxes
         final_dfs = []
@@ -217,6 +221,7 @@ class Scraper:
         self.results_df = pd.concat(final_dfs)
         if not self.results_df.empty:
             print('Join successful!')
+            print('Time elapsed:', round((time() - start)/60, 2), 'minutes.')
 
 
 class NocScraper(Scraper):
@@ -307,7 +312,7 @@ class NocScraper(Scraper):
             self.athlete_links = []
 
         # Loop through games_pages and extract athlete_links
-        for page in self.games_links:
+        for page in tqdm(self.games_links):
 
             # Get and parse html text using Python's built-in HTML parser
             text = get(page).text
@@ -344,4 +349,3 @@ class NocScraper(Scraper):
                ' athletes for NOC = ' + \
                self.noc
         print(text)
-

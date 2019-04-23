@@ -1,4 +1,6 @@
 # IntelliJ project files
 .idea
 *.iml
-.spyproject\*
+
+# Spyder project files
+*.spyproject\*
