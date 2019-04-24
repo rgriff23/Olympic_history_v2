@@ -7,12 +7,11 @@ from geotext import GeoText as gp
 # Helper functions
 def parse_games(df):
     temp = df.Games.str.split(' ', n = 1, expand = True)
-    # The 'Equestrian' value corresponds to the 1956 Stockholm Games, which 
-    # occurred separately from the rest of the Summer Games in Melbourne
-    if temp[1] == 'Equestrian':
-        temp[1] = 'Summer'
     df['Year'] = temp[0]
     df['Season'] = temp[1]
+    # The 'Equestrian' value corresponds to the 1956 Stockholm Games, which 
+    # occurred separately from the rest of the Summer Games in Melbourne
+    df['Season'] = df.Season.replace('Equestrian',  'Summer')
     df.drop('Games', axis=1, inplace=True)
     return df
 

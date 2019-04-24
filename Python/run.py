@@ -1,7 +1,8 @@
 from scrapers import NocScraper
 from parsers import Parser
 
-nocs = ['GER','GDR','FRG','SAA']
+# NOCs Lars asked for
+nocs = ['GER','GDR','FRG','SAA','AUT','DEN','NOR','ISL','IRL','SWE','SUI']
 
 for noc in nocs:
 
