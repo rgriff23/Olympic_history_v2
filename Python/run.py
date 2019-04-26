@@ -6,7 +6,7 @@ This script loops over a list of NOCs and writes parsed results to files
 with the name of the noc in the specified directory
 """
 
-nocs = ['AFG','ZIM']
+nocs = ['PER']
 write_path = 'H:/Olympic history data/NOC/'
 
 for noc in nocs:
