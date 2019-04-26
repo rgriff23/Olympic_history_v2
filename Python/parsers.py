@@ -29,9 +29,6 @@ def parse_sport(df):
     return df
 
 def parse_event(df):
-    df['Event'] = df.Event.str.replace('Ã', 'x')
-    df['Event'] = df.Event.str.replace('Ã\x97', 'x')
-    df['Event'] = df.Event.str.replace('Ã\x89pÃ©e', 'epee') 
     return df
 
 def parse_team(df):
@@ -181,6 +178,6 @@ class Parser:
         df.reset_index(drop=True, inplace=True)
         self.parsed_results = df
         
-        print('Parsed', self.results_df.shape[1], 'fields.')
+        print(f'Parsed {len(valid_fields)} fields.')
 
     

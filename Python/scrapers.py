@@ -4,6 +4,7 @@ from time import (sleep, time)
 from tqdm import tqdm
 import warnings
 import pandas as pd
+import numpy as np
 
 
 class Scraper:
@@ -25,6 +26,7 @@ class Scraper:
         self.events = [] # events history dicts of lists
         self.results_df = [] # infobox + results dataframe
         self.events_dfs = [] # events history dict of dataframes
+        self.links_missing_data = [] # links missing results or infobox
  
     def parse_infobox(self, html_soup, p):
         """
@@ -150,24 +152,46 @@ class Scraper:
             except Exception as e:
                 print('Exception parsing infobox: ' + page)
                 print(e)
+                self.info.append(None)
                 continue
 
             # Parse results table and store in self.results
             table = html_soup.find("div", {"id": "div_results"})
-            try:
-                table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
-                table_body = [row.split('\n')[1:10] for row in table_body]
-                self.results.append(table_body)
-            except Exception as e:
-                print('Exception parsing results table: ' + page)
-                print(e)
-                continue
+            if table:
+                try:
+                    
+                    table_body = [tr.text for tr in table.find('tbody').find_all('tr')]
+                    table_body = [row.split('\n')[1:10] for row in table_body]
+                    self.results.append(table_body)
+                except Exception as e:
+                    print('Exception parsing results table: ' + page)
+                    print(e)
+                    self.results.append(None)
+                    continue
+            else:
+                self.results.append(None)
+            
 
         # Checks
         assert len(self.athlete_links) == len(self.results)
         assert len(self.athlete_links) == len(self.info)
-
+        
+        # Identify links with missing info or results and remove them
+        keep = []
+        for i in range(len(self.info)):
+            if self.results[i] == None or self.info[i] == None:
+                keep.append(False)
+                self.links_missing_data.append(self.athlete_links[i])
+            else:
+                keep.append(True)
+        self.athlete_links = list(np.array(self.athlete_links)[np.array(keep)])
+        self.results = list(np.array(self.results)[np.array(keep)])
+        self.info = list(np.array(self.info)[np.array(keep)])
+    
         print(f'Collected data for {len(self.athlete_links)} athletes.')
+        if len(self.links_missing_data) > 0:
+            print(f'... {len(self.links_missing_data)} athlete pages were missing data.')
+            print('... the links are saved in self.links_missing_data.')
         print('Time elapsed:', round((time() - start)/60, 2), 'minutes.')
 
     def join_data(self):
@@ -323,10 +347,19 @@ class NocScraper(Scraper):
 
             # Extract athlete page links and store in self.athlete_links
             for row in table_body.find_all('tr'):
-                cells = row.find_all('td')
-                html = str(cells[1].find('a', href=True)['href']).split('/')
-                sex = str(cells[2].contents[0])
-                sport = cells[4].find('a', href=True).text
+                try:
+                    cells = row.find_all('td')
+                    html = str(cells[1].find('a', href=True)['href']).split('/')
+                    if len(cells[2].contents) > 0:
+                        sex = str(cells[2].contents[0])
+                    else:
+                        sex = None
+                    sport = cells[4].find('a', href=True).text
+                except Exception as e:
+                    print('')
+                    print('There was a problem parsing one of the Games pages:')
+                    print(page)
+                    print(e)
 
                 # Filters for sex and sport
                 if male == False and sex == 'Male':
