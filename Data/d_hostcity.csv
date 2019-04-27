@@ -5,19 +5,19 @@ Year,Season,City,Country,lon,lat
 1906,Summer,Athina,Greece,23.7275388,37.9838096
 1908,Summer,London,Great Britain,-0.1277583,51.5073509
 1912,Summer,Stockholm,Germany,18.0685808,59.3293235
-1920,Summer,Antwerpen,,4.4024643,51.2194475
+1920,Summer,Antwerpen,Belgium,4.4024643,51.2194475
 1924,Summer,Paris,France,2.3522219,48.856614
-1924,Winter,Chamonix,,6.869433,45.923697
+1924,Winter,Chamonix,France,6.869433,45.923697
 1928,Summer,Amsterdam,Netherlands,4.8951679,52.3702157
-1928,Winter,Sankt Moritz,,9.8355079,46.4907973
+1928,Winter,Sankt Moritz,Switzerland,9.8355079,46.4907973
 1932,Summer,Los Angeles,United States of America,-118.2436849,34.0522342
 1932,Winter,Lake Placid,United States of America,-73.9798713,44.2794911
 1936,Summer,Berlin,Germany,13.404954,52.5200066
 1936,Winter,Garmisch-Partenkirchen,,11.0954984,47.4916945
 1948,Summer,London,Great Britain,-0.1277583,51.5073509
-1948,Winter,Sankt Moritz,,9.8355079,46.4907973
+1948,Winter,Sankt Moritz,Switzerland,9.8355079,46.4907973
 1952,Summer,Helsinki,Finland,24.9383791,60.1698557
-1952,Winter,Oslo,,10.7522454,59.9138688
+1952,Winter,Oslo,Norway,10.7522454,59.9138688
 1956,Winter,Cortina d'Ampezzo,,12.1356524,46.5404711
 1956,Summer,Melbourne,Australia,144.9630576,-37.8136276
 1956,Summer,Stockholm,Germany,18.0685808,59.3293235
