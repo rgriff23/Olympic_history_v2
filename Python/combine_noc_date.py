@@ -2,8 +2,8 @@ import pandas as pd
 import glob
 
 # Paths
-import_path = 'H:/Olympic history data/NOC/'
-export_path = 'H:/Olympic history data/Athlete longevity study/'
+import_path = 'H:/Olympic history data/final/'
+export_path = 'H:/Olympic history data/'
 
 # Import NOCs
 df = pd.concat(map(pd.read_csv, glob.glob(import_path + '*.csv')))
@@ -12,4 +12,4 @@ df = pd.concat(map(pd.read_csv, glob.glob(import_path + '*.csv')))
 df = df.drop_duplicates()
 
 # Export
-df.to_csv(export_path + 'full_deduplicated_dataset.csv')
+df.to_csv(export_path + 'final_data.csv')

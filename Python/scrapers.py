@@ -19,7 +19,7 @@ class Scraper:
     """
 
     def __init__(self):
-        self.base_url = 'https://www.sports-reference.com/oFlympics/'
+        self.base_url = 'https://www.sports-reference.com/olympics/'
         self.athlete_links = []  # a list of athlete links
         self.results = []  # results lists-of-lists get stored here
         self.info = [] # info box dictionaries get stored here
@@ -35,6 +35,10 @@ class Scraper:
         :param html_soup:
         :return: Results are stored as a list of dictionaries in self.info
         """
+        
+        # Get Athlete ID number
+        athlete_id = html_soup.find("div", {"class":"x_small_text clear_both"}).text
+        athlete_id = int(''.join(i for i in athlete_id if i.isdigit()))
 
         # Get the infobox
         ptext = html_soup.find("div", {"id": "info_box"}).find('p').getText().split('\n')
@@ -98,7 +102,8 @@ class Scraper:
             relatives = None
 
         # Append infobox as dictionary to self.info
-        self.info.append({'name': name,
+        self.info.append({'id': athlete_id, 
+                          'name': name,
                           'gender': gender,
                           'height': height,
                           'weight': weight,
@@ -145,6 +150,7 @@ class Scraper:
 
             # Parse HTML
             html_soup = BeautifulSoup(text, 'html.parser')
+            
 
             # Parse info box and store in self.info
             try:
@@ -338,7 +344,7 @@ class NocScraper(Scraper):
         # Loop through games_pages and extract athlete_links
         for page in tqdm(self.games_links):
 
-            # Get and parse html text using Python's built-in HTML parser
+            # Get and parse html text 
             text = get(page).text
             html_soup = BeautifulSoup(text, 'html.parser')
 

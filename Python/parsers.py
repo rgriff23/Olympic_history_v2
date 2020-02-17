@@ -5,6 +5,10 @@ import dateparser as dp
 from geotext import GeoText as gp
 
 # Helper functions
+def parse_id(df):
+    df.rename(columns={'id':'ID'}, inplace=True)
+    return df
+
 def parse_games(df):
     temp = df.Games.str.split(' ', n = 1, expand = True)
     df['Year'] = temp[0]
@@ -12,7 +16,7 @@ def parse_games(df):
     # The 'Equestrian' value corresponds to the 1956 Stockholm Games, which 
     # occurred separately from the rest of the Summer Games in Melbourne
     df['Season'] = df.Season.replace('Equestrian',  'Summer')
-    df.drop('Games', axis=1, inplace=True)
+    #df.drop('Games', axis=1, inplace=True)
     return df
 
 def parse_age(df):
@@ -32,13 +36,13 @@ def parse_event(df):
     return df
 
 def parse_team(df):
-    return df.drop(['Team'], axis=1)
+    return df
 
 def parse_noc(df):
     return df
 
 def parse_rank(df):
-    return df.drop(['Rank'], axis=1)
+    return df
 
 def parse_medal(df):
     df['Medal'].replace('', np.nan, inplace=True)
@@ -107,6 +111,7 @@ def parse_weight(df):
     return df
 
 parse_results_dict = {
+        'id': parse_id,
         'name': parse_name,
         'gender': parse_gender,
         'Games': parse_games,
